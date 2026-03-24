@@ -2,100 +2,129 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Teorema das 4 Cores</title>
+    <title>Coloração do Mapa</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; margin: 0; }
-        .container { display: flex; height: 100vh; }
+        :root { --primary: #e67e22; --bg: #1a1a1a; --sidebar: #252525; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; overflow: hidden; }
         
-        /* Lateral de controle */
-        .sidebar { width: 350px; background: #252525; padding: 30px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 10; }
-        h2 { color: #e67e22; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        /* Layout flexível para tela inteira */
+        .app-container { display: flex; height: 100vh; width: 100vw; }
         
-        /* Botão estilizado */
-        button { 
-            width: 100%; padding: 15px; background: #e67e22; color: white; border: none; 
-            border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px;
-        }
-        button:hover { background: #d35400; transform: scale(1.02); }
+        .sidebar { width: 320px; background: var(--sidebar); padding: 30px; box-shadow: 5px 0 15px rgba(0,0,0,0.3); z-index: 10; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; }
+        
+        /* Centraliza o SVG */
+        .map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: var(--bg); overflow: hidden; }
 
-        /* Área do Mapa */
-        .map-area { flex: 1; display: flex; align-items: center; justify-content: center; background: #1a1a1a; }
-        svg { width: 85%; height: auto; max-height: 90vh; }
-        path { fill: #444; stroke: #1a1a1a; stroke-width: 1.5; transition: fill 0.6s ease; }
-        path:hover { stroke: #fff; stroke-width: 2; opacity: 0.8; }
+        /* Estilo do Mapa SVG. */
+        svg { height: 90vh; width: auto;  filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.5)); }
+        path { fill: #444; stroke: #1a1a1a; stroke-width: 2; transition: all 0.5s ease; cursor: crosshair; }
+        path:hover { stroke: #fff; stroke-width: 3; opacity: 0.9; }
 
-        .status-box { margin-top: 30px; padding: 15px; background: #333; border-radius: 5px; font-size: 14px; line-height: 1.6; }
+        /* Tooltip flutuante */
+        #tooltip { position: absolute; display: none; background: rgba(0,0,0,0.9); color: #fff; padding: 10px; border-radius: 5px; font-size: 14px; pointer-events: none; border: 1px solid var(--primary); z-index: 1000; white-space: nowrap; }
+
+        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #d35400; transform: translateY(-2px); }
+        .status { padding: 15px; background: #333; border-radius: 6px; font-size: 13px; color: #bbb; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="sidebar">
-        <h2>Trabalho Grafos</h2>
-        <p>Implementação de algoritmo para as 27 UFs do Brasil.</p>
-        <button onclick="rodarAlgoritmo()">COLORIR MAPA</button>
+<div id="tooltip"></div>
 
-        <div class="status-box" id="log">
-            Aguardando comando...
-        </div>
-    </div>
+<div class="app-container">
+    <aside class="sidebar">
+        <h2 style="color: var(--primary);">Grafos</h2>
+        <p>Implementação de algoritmo heurístico guloso para as 27 UFs do Brasil.</p>
+        <button onclick="iniciarColoracao()">COLORIR MAPA</button>
+        <div id="log" class="status">Aguardando comando...</div>
+    </aside>
 
-    <div class="map-area">
-        <svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-            <path id="RR" d="M220,40 L260,30 L280,80 L230,100 Z" />
-            <path id="AP" d="M350,50 L390,60 L380,100 L340,90 Z" />
-            <path id="AM" d="M100,100 L250,110 L280,250 L120,240 Z" />
-            <path id="PA" d="M280,100 L420,110 L450,250 L280,250 Z" />
-            <path id="AC" d="M30,200 L110,210 L100,260 L40,250 Z" />
-            <path id="RO" d="M130,250 L220,260 L200,340 L120,320 Z" />
-            <path id="TO" d="M380,250 L440,260 L430,380 L370,360 Z" />
-            <path id="MA" d="M430,120 L500,140 L480,240 L430,230 Z" />
-            <path id="PI" d="M490,160 L540,180 L520,280 L480,250 Z" />
-            <path id="CE" d="M540,160 L590,170 L580,220 L530,210 Z" />
-            <path id="RN" d="M585,175 L620,185 L615,205 Z" />
-            <path id="PB" d="M580,210 L620,215 L615,235 Z" />
-            <path id="PE" d="M530,220 L610,240 L600,270 L520,250 Z" />
-            <path id="AL" d="M585,265 L610,275 L605,290 Z" />
-            <path id="SE" d="M575,285 L595,295 L590,310 Z" />
-            <path id="BA" d="M450,270 L540,280 L560,420 L440,400 Z" />
-            <path id="MT" d="M240,260 L370,260 L360,420 L220,400 Z" />
-            <path id="GO" d="M365,370 L430,385 L420,480 L350,460 Z" />
-            <path id="DF" d="M390,410 L410,410 L410,430 L390,430 Z" />
-            <path id="MS" d="M260,420 L350,430 L330,520 L240,500 Z" />
-            <path id="MG" d="M430,410 L540,430 L520,530 L410,510 Z" />
-            <path id="ES" d="M545,460 L570,470 L560,510 L535,500 Z" />
-            <path id="RJ" d="M520,535 L560,545 L550,570 L510,560 Z" />
-            <path id="SP" d="M340,515 L420,525 L400,590 L320,570 Z" />
-            <path id="PR" d="M270,520 L330,530 L310,580 L250,570 Z" />
-            <path id="SC" d="M260,585 L310,595 L300,630 L250,620 Z" />
-            <path id="RS" d="M240,630 L300,640 L280,700 L220,680 Z" />
+    <main class="map-area">
+        <svg viewBox="0 0 750 900" style="width: 100%; max-height: 90vh;">
+            <path id="RR" d="M220,40 L280,30 L300,90 L230,110 Z" />
+            <path id="AP" d="M370,50 L420,60 L410,110 L350,100 Z" />
+            <path id="AM" d="M80,110 L260,120 L290,280 L100,270 Z" />
+            <path id="PA" d="M300,110 L460,120 L480,280 L295,285 Z" />
+            <path id="AC" d="M20,230 L90,240 L80,300 L30,290 Z" />
+            <path id="RO" d="M120,280 L220,295 L200,380 L110,360 Z" />
+            <path id="TO" d="M410,290 L480,300 L470,430 L400,410 Z" />
+            <path id="MA" d="M470,130 L540,150 L520,260 L465,250 Z" />
+            <path id="PI" d="M530,170 L580,190 L560,300 L515,270 Z" />
+            <path id="CE" d="M590,170 L640,180 L630,240 L585,230 Z" />
+            <path id="RN" d="M645,185 L680,195 L675,225 Z" />
+            <path id="PB" d="M635,245 L680,255 L675,285 Z" />
+            <path id="PE" d="M570,240 L660,265 L650,310 L560,290 Z" />
+            <path id="AL" d="M620,315 L660,325 L650,350 Z" />
+            <path id="SE" d="M610,355 L640,365 L630,390 Z" />
+            <path id="BA" d="M490,290 L600,300 L620,480 L480,450 Z" />
+            <path id="MT" d="M250,290 L400,290 L390,480 L230,460 Z" />
+            <path id="GO" d="M395,420 L470,435 L460,550 L380,530 Z" />
+            <path id="DF" d="M420,470 L445,470 L445,495 L420,495 Z" />
+            <path id="MS" d="M270,490 L380,500 L360,610 L250,590 Z" />
+            <path id="MG" d="M470,460 L600,480 L580,610 L460,580 Z" />
+            <path id="ES" d="M605,520 L635,530 L625,580 L595,570 Z" />
+            <path id="RJ" d="M570,615 L615,625 L605,660 L555,650 Z" />
+            <path id="SP" d="M370,590 L465,605 L445,690 L350,670 Z" />
+            <path id="PR" d="M290,600 L360,615 L340,680 L270,665 Z" />
+            <path id="SC" d="M280,690 L340,705 L330,750 L270,740 Z" />
+            <path id="RS" d="M250,755 L320,770 L300,850 L230,830 Z" />
         </svg>
-    </div>
+    </main>
 </div>
 
 <script>
-    async function rodarAlgoritmo() {
+    //mapear as siglas aos nomes completos dos estados
+    const nomesUFs = {
+        "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá", "BA": "Bahia",
+        "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás",
+        "MA": "Maranhão", "MG": "Minas Gerais", "MS": "Mato Grosso do Sul",
+        "MT": "Mato Grosso", "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco",
+        "PI": "Piauí", "PR": "Paraná", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
+        "RO": "Rondônia", "RR": "Roraima", "RS": "Rio Grande do Sul", "SC": "Santa Catarina",
+        "SE": "Sergipe", "SP": "São Paulo", "TO": "Tocantins"
+    };
+
+    const tooltip = document.getElementById('tooltip');
+
+    // Lógica para tooltip
+    document.querySelectorAll('path').forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+            const sigla = e.target.id;
+            const nomeCompleto = nomesUFs[sigla];
+            tooltip.style.display = 'block';
+            tooltip.innerHTML = `<b>${nomeCompleto}</b> (${sigla})`;
+        });
+        el.addEventListener('mousemove', (e) => {
+            // Posiciona o tooltip próximo ao cursor do mouse
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+        });
+        el.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+    });
+
+    // Função de integração com o Backend Python para colorir o mapa
+    async function iniciarColoracao() {
         const log = document.getElementById('log');
-        log.innerHTML = "Enviando requisição ao Python...";
+        log.innerHTML = "Calculando adjacências via Python...";
         
         try {
-            // Chama a API do Flask
             const response = await fetch('/executar_algoritmo');
-            const cores = await response.json();
-            
-            // Aplica as cores no SVG
-            for (const [uf, cor] of Object.entries(cores)) {
-                const estadoPath = document.getElementById(uf);
-                if (estadoPath) {
-                    estadoPath.style.fill = cor;
-                }
+            if (!response.ok) {
+                throw new Error('Falha na resposta do servidor');
             }
-            log.innerHTML = "<b>Sucesso!</b><br>Algoritmo guloso executado. Restrição de vizinhança obedecida.";
+            const data = await response.json();
+            
+            // Itera sobre o resultado do Python e atualiza o preenchimento de cada estado
+            for (const uf in data) {
+                const estado = document.getElementById(uf);
+                if (estado) estado.style.fill = data[uf];
+            }
+            log.innerHTML = "<b style='color:#2ecc71'>Sucesso!</b><br>Teorema das 4 Cores aplicado.";
         } catch (e) {
-            log.innerHTML = "Erro ao conectar com o servidor Flask.";
+            log.innerHTML = `<b style='color:#e74c3c'>Erro: ${e.message}</b><br>Verifique se o backend Python está rodando.`;
         }
     }
 </script>
-
 </body>
 </html>
